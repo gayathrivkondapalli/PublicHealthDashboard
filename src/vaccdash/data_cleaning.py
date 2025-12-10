@@ -17,4 +17,14 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
     vaccination_cols = ["total_vaccinations", "people_vaccinated", "people_fully_vaccinated"]
     cleaned = cleaned.dropna(subset=vaccination_cols, how='all').reset_index(drop=True)
 
+    # Split vaccine manufacturers into separate boolean columns (AI enhancement)
+    if "vaccines" in cleaned.columns:
+        unique_vaccines = set()
+        for vaccines in cleaned["vaccines"].dropna():
+            for vaccine in vaccines.split(", "):
+                unique_vaccines.add(vaccine)
+
+        for vaccine in unique_vaccines:
+            col_name = f"vaccine_{vaccine.replace('/', '_').replace(' ', '_')}"
+            cleaned[col_name] = cleaned["vaccines"].apply(lambda x: vaccine in x.split(", ") if pd.notna(x) else False)
     return cleaned

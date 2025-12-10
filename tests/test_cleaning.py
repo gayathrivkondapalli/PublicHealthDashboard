@@ -48,4 +48,36 @@ def test_nan_handling_preserve_records():
     assert result.loc[result["date"] == pd.to_datetime("2021-01-02"), "people_vaccinated"].values[0] == 150.0
     assert result.loc[result["date"] == pd.to_datetime("2021-01-03"), "people_fully_vaccinated"].values[0] == 80.0
 
+# Acceptance: The vaccine manufacturers should be split into their own fields with boolean values indicating whether a country used that vaccine on that date.
+def test_vaccine_manufacturer_splitting():
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland"],
+            "iso_code": ["ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-02"],
+            "vaccines": ["Pfizer/BioNTech, Moderna", "Moderna, AstraZeneca"],
+            "total_vaccinations": [100.0, 200.0],
+            "people_vaccinated": [50.0, 150.0],
+            "people_fully_vaccinated": [20.0, 70.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Extract unique vaccine manufacturers
+    unique_vaccines = set()
+    for vaccines in df["vaccines"]:
+        for vaccine in vaccines.split(", "):
+            unique_vaccines.add(vaccine)
+
+    # Check that each unique vaccine has its own boolean column
+    for vaccine in unique_vaccines:
+        col_name = f"vaccine_{vaccine.replace('/', '_').replace(' ', '_')}"
+        assert col_name in result.columns
+
+        # Check boolean values
+        for idx, row in result.iterrows():
+            if vaccine in df.loc[idx, "vaccines"]:
+                assert result.loc[idx, col_name] == True
+            else:
+                assert result.loc[idx, col_name] == False
  
