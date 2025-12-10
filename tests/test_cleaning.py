@@ -99,3 +99,45 @@ def test_duplicate_record_removal():
     assert len(result) == 2
     assert not ((result["iso_code"] == "ALA") & (result["date"] == pd.to_datetime("2021-01-01"))).sum() > 1
  
+ #Acceptance: The system should log info messages during data cleaning steps.
+def test_logging_info_messages(caplog):
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland"],
+            "iso_code": ["ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-02"],
+            "vaccines": ["Pfizer/BioNTech, Moderna", "Moderna, AstraZeneca"],
+            "total_vaccinations": [100.0, 200.0],
+            "people_vaccinated": [50.0, 150.0],
+            "people_fully_vaccinated": [20.0, 70.0],
+        }
+    )
+    with caplog.at_level("INFO"):
+        clean_vaccination_data(df)
+
+    # Check that info messages are logged
+    assert "Dropping records with all vaccination data missing" in caplog.text
+    assert "Splitting vaccine manufacturers into separate boolean columns" in caplog.text
+    assert "Removing duplicate records based on iso_code and date" in caplog.text
+
+#Acceptance: The system should calculate the ratio of people fully vaccinated to total vaccinations and add it as a new column.
+def test_fully_vaccinated_ratio_calculation():  
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland"],
+            "iso_code": ["ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-02"],
+            "total_vaccinations": [100.0, 200.0],
+            "people_vaccinated": [50.0, 150.0],
+            "people_fully_vaccinated": [20.0, 70.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Calculate expected ratios
+    expected_ratios = [0.2, 0.35]  # 20/100 and 70/200
+
+    # Check that the new column exists and has correct values
+    assert "fully_vaccinated_ratio" in result.columns
+    for idx, row in result.iterrows():
+        assert pytest.approx(row["fully_vaccinated_ratio"], 0.01) == expected_ratios[idx]

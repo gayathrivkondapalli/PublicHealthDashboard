@@ -35,6 +35,11 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
     # Remove duplicate records based on iso_code and date, keeping the first occurrence
     logger.info("Removing duplicate records based on iso_code and date")
     cleaned = cleaned.drop_duplicates(subset=["iso_code", "date"], keep="first").reset_index(drop=True)
+
+    # Calculate the ratio of people fully vaccinated to total vaccinations
+    logger.info("Calculating fully vaccinated ratio")
+    cleaned["fully_vaccinated_ratio"] = cleaned["people_fully_vaccinated"] / cleaned["total_vaccinations"]
+
     return cleaned
 
 
