@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-from vaccdash.data_access_module import init_db, load_csv_to_sqlite
+from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country
 
 # Requirement: System shall load cleaned vaccination data into SQLite.
 def test_init_db_creates_vaccinations_table(tmp_path):
@@ -75,3 +75,21 @@ def test_init_db_inserts_records(tmp_path):
     conn.close()
 
     assert count > 0
+# Acceptance: Query function retrieves correct records
+def test_query_country_retrieves_correct_records(tmp_path):
+    db_path = tmp_path / "test.db"
+
+    # Act
+    init_db(db_path)
+    load_csv_to_sqlite("/Users/gayathrivkondapalli/Desktop/PGAI-Coursework/country_vaccinations.csv", db_path)
+
+    conn = sqlite3.connect(db_path)
+    result_df = query_country(conn, "USA", "2021-01-01", "2021-01-31")
+    conn.close()
+
+    # Assert: all records match the query criteria
+    assert not result_df.empty
+    assert all(result_df["iso_code"] == "USA")
+    assert all(
+        (result_df["date"] >= "2021-01-01") & (result_df["date"] <= "2021-01-31")
+    )

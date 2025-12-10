@@ -41,3 +41,11 @@ def load_csv_to_sqlite(csv_path, db_path):
      conn = sqlite3.connect(db_path)
      df.to_sql('vaccinations', conn, if_exists='append', index=False)
      conn.close()
+
+def query_country(conn, iso_code, start_date, end_date):
+    query = """
+    SELECT * FROM vaccinations 
+    WHERE iso_code = ? AND date BETWEEN ? AND ?
+    ORDER BY date
+    """
+    return pd.read_sql_query(query, conn, params=[iso_code, start_date, end_date])
