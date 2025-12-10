@@ -27,4 +27,9 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
         for vaccine in unique_vaccines:
             col_name = f"vaccine_{vaccine.replace('/', '_').replace(' ', '_')}"
             cleaned[col_name] = cleaned["vaccines"].apply(lambda x: vaccine in x.split(", ") if pd.notna(x) else False)
+
+    # Remove duplicate records based on iso_code and date, keeping the first occurrence
+    cleaned = cleaned.drop_duplicates(subset=["iso_code", "date"], keep="first").reset_index(drop=True)
     return cleaned
+
+

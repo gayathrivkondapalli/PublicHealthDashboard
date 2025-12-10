@@ -80,4 +80,22 @@ def test_vaccine_manufacturer_splitting():
                 assert result.loc[idx, col_name] == True
             else:
                 assert result.loc[idx, col_name] == False
+
+#Acceptance: The system should remove duplicate records based on iso_code and date.
+def test_duplicate_record_removal():
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland", "Aland"],
+            "iso_code": ["ALA", "ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-01", "2021-01-02"],
+            "total_vaccinations": [100.0, 100.0, 200.0],
+            "people_vaccinated": [50.0, 50.0, 150.0],
+            "people_fully_vaccinated": [20.0, 20.0, 70.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Check that duplicate records are removed
+    assert len(result) == 2
+    assert not ((result["iso_code"] == "ALA") & (result["date"] == pd.to_datetime("2021-01-01"))).sum() > 1
  
