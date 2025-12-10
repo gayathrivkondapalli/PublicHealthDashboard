@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country
+from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country_by_ISO
 
 # Requirement: System shall load cleaned vaccination data into SQLite.
 def test_init_db_creates_vaccinations_table(tmp_path):
@@ -76,7 +76,7 @@ def test_init_db_inserts_records(tmp_path):
 
     assert count > 0
 # Acceptance: Query function retrieves correct records
-def test_query_country_retrieves_correct_records(tmp_path):
+def test_query_country_by_ISO_retrieves_correct_records(tmp_path):
     db_path = tmp_path / "test.db"
 
     # Act
@@ -84,7 +84,7 @@ def test_query_country_retrieves_correct_records(tmp_path):
     load_csv_to_sqlite("/Users/gayathrivkondapalli/Desktop/PGAI-Coursework/country_vaccinations.csv", db_path)
 
     conn = sqlite3.connect(db_path)
-    result_df = query_country(conn, "USA", "2021-01-01", "2021-01-31")
+    result_df = query_country_by_ISO(conn, "USA", "2021-01-01", "2021-01-31")
     conn.close()
 
     # Assert: all records match the query criteria

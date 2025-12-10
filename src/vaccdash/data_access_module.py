@@ -42,7 +42,7 @@ def load_csv_to_sqlite(csv_path, db_path):
      df.to_sql('vaccinations', conn, if_exists='append', index=False)
      conn.close()
 
-def query_country(conn, iso_code, start_date, end_date):
+def query_country_by_ISO(conn, iso_code, start_date, end_date):
     query = """
     SELECT * FROM vaccinations 
     WHERE iso_code = ? AND date BETWEEN ? AND ?
