@@ -141,3 +141,22 @@ def test_fully_vaccinated_ratio_calculation():
     assert "fully_vaccinated_ratio" in result.columns
     for idx, row in result.iterrows():
         assert pytest.approx(row["fully_vaccinated_ratio"], 0.01) == expected_ratios[idx]
+
+#Acceptance: The system should handle cases where total_vaccinations is zero to avoid division by zero errors.
+def test_fully_vaccinated_ratio_division_by_zero():  
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland"],
+            "iso_code": ["ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-02"],
+            "total_vaccinations": [0.0, 200.0],
+            "people_vaccinated": [0.0, 150.0],
+            "people_fully_vaccinated": [0.0, 70.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Check that the ratio for the first record is None or NaN to avoid division by zero
+    assert pd.isna(result.loc[result["date"] == pd.to_datetime("2021-01-01"), "fully_vaccinated_ratio"].values[0])
+    # Check that the ratio for the second record is calculated correctly
+    assert pytest.approx(result.loc[result["date"] == pd.to_datetime("2021-01-02"), "fully_vaccinated_ratio"].values[0], 0.01) == 0.35

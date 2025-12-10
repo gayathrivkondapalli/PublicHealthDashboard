@@ -37,8 +37,14 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
     cleaned = cleaned.drop_duplicates(subset=["iso_code", "date"], keep="first").reset_index(drop=True)
 
     # Calculate the ratio of people fully vaccinated to total vaccinations
+    # Skip rows where total_vaccinations is NaN or 0
     logger.info("Calculating fully vaccinated ratio")
-    cleaned["fully_vaccinated_ratio"] = cleaned["people_fully_vaccinated"] / cleaned["total_vaccinations"]
+    cleaned["fully_vaccinated_ratio"] = cleaned.apply(
+        lambda row: row["people_fully_vaccinated"] / row["total_vaccinations"]
+        if pd.notna(row["total_vaccinations"]) and row["total_vaccinations"] != 0
+        else None,
+        axis=1
+    )
 
     return cleaned
 
