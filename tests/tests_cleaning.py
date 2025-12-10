@@ -24,3 +24,28 @@ def test_date_time_format_and_sorting():
     # Check ordering by date within iso_code
     dates = list(result.sort_values(["iso_code", "date"])["date"])
     assert dates == sorted(dates)
+
+#Acceptance: Unit test should test whether Nan values are handled correctly
+def test_nan_handling_preserve_records():
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Aland", "Aland"],
+            "iso_code": ["ALA", "ALA", "ALA"],
+            "date": ["2021-01-01", "2021-01-02", "2021-01-03"],
+            "total_vaccinations": [100.0, None, 300.0],
+            "people_vaccinated": [50.0, 150.0, None],
+            "people_fully_vaccinated": [20.0, None, 80.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Check that NaN values are preserved
+    assert result["total_vaccinations"].isnull().sum() == 1
+    assert result["people_vaccinated"].isnull().sum() == 1
+    assert result["people_fully_vaccinated"].isnull().sum() == 1
+    # Check that non-NaN values are unchanged
+    assert result.loc[result["date"] == pd.to_datetime("2021-01-01"), "total_vaccinations"].values[0] == 100.0
+    assert result.loc[result["date"] == pd.to_datetime("2021-01-02"), "people_vaccinated"].values[0] == 150.0
+    assert result.loc[result["date"] == pd.to_datetime("2021-01-03"), "people_fully_vaccinated"].values[0] == 80.0
+
+ 
