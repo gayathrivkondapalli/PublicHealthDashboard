@@ -28,7 +28,7 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
             for vaccine in vaccines.split(", "):
                 unique_vaccines.add(vaccine)
 
-        for vaccine in unique_vaccines:
+        for vaccine in sorted(unique_vaccines):
             col_name = f"vaccine_{vaccine.replace('/', '_').replace(' ', '_')}"
             cleaned[col_name] = cleaned["vaccines"].apply(lambda x: vaccine in x.split(", ") if pd.notna(x) else False)
 
