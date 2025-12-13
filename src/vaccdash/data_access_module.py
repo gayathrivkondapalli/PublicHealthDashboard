@@ -85,3 +85,20 @@ def plot_source_distribution(db_path):
     plt.title('Distribution of Data Sources')
     plt.tight_layout()
     plt.show()
+
+def plot_daily_vaccinations(db_path, country, start_date, end_date):
+    """
+    Plots daily vaccinations for a given country over a specified date range.
+    """
+    conn = sqlite3.connect(db_path)
+    df = query_country(conn, country, start_date, end_date)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(pd.to_datetime(df['date']), df['daily_vaccinations'], marker='o')
+    plt.title(f'Daily Vaccinations in {country} from {start_date} to {end_date}')
+    plt.xlabel('Date')
+    plt.ylabel('Daily Vaccinations')
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.tight_layout()
+    plt.show()

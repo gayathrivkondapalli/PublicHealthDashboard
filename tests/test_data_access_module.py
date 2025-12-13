@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country_by_ISO, query_country, plot_source_distribution
+from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country_by_ISO, query_country, plot_source_distribution, plot_daily_vaccinations
 
 
 # Requirement: System shall load cleaned vaccination data into SQLite.
@@ -177,6 +177,38 @@ def test_count_countries_using_vaccine(tmp_path):
     # Assert
     assert country_count == 2  # CountryA and CountryC use VaccineA
 
+    conn.close()
+
+def test_create_visualisation_for_daily_vaccine_rates_for_a_date_range_for_a_country(tmp_path, monkeypatch):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    # Insert mock data
+    conn = sqlite3.connect(db_path)
+    df = pd.DataFrame({
+        "iso_code": ["AAA"] * 5,
+        "country": ["CountryA"] * 5,
+        "location": ["LocA"] * 5,
+        "date": pd.date_range(start="2021-01-01", periods=5).astype(str),
+        "total_vaccinations": [100, 200, 300, 400, 500],
+        "people_vaccinated": [50, 150, 250, 350, 450],
+        "people_fully_vaccinated": [25, 75, 125, 175, 225],
+        "daily_vaccinations_raw": [10, 20, 30, 40, 50],
+        "daily_vaccinations": [10, 20, 30, 40, 50],
+        "total_vaccinations_per_hundred": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "people_vaccinated_per_hundred": [0.5, 1.5, 2.5, 3.5, 4.5],
+        "people_fully_vaccinated_per_hundred": [0.25, 0.75, 1.25, 1.75, 2.25],
+        "daily_vaccinations_per_million": [100, 200, 300, 400, 500],
+        "vaccines": ["VaccineA"] * 5,
+        "source_name": ["Source1"] * 5,
+        "source_website": ["site1"] * 5
+    })
+    df.to_sql('vaccinations', conn, if_exists='append', index=False)
+
+    # Patch plt.show to prevent the plot window from blocking the test
+    monkeypatch.setattr(plt, "show", lambda: None)
+
+    plot_daily_vaccinations(db_path, "CountryA", "2021-01-01", "2021-01-05")
     conn.close()
 
 
