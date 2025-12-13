@@ -1,5 +1,6 @@
 import pandas as pd
 import sqlite3
+import matplotlib.pyplot as plt
 
 def init_db(db_path):
    
@@ -49,3 +50,26 @@ def query_country_by_ISO(conn, iso_code, start_date, end_date):
     ORDER BY date
     """
     return pd.read_sql_query(query, conn, params=[iso_code, start_date, end_date])
+
+def query_country(conn, country, start_date, end_date):
+    query = """
+    SELECT * FROM vaccinations 
+    WHERE country = ? AND date BETWEEN ? AND ?
+    ORDER BY date
+    """
+    return pd.read_sql_query(query, conn, params=[country, start_date, end_date])
+
+def plot_source_distribution(db_path):
+    """
+    Creates a pie chart showing the distribution of data sources in the vaccinations table.
+    """
+    conn = sqlite3.connect(db_path)
+    query = "SELECT source_name, COUNT(*) as count FROM vaccinations GROUP BY source_name"
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    plt.figure(figsize=(8, 8))
+    plt.pie(df['count'], labels=df['source_name'], autopct='%1.1f%%', startangle=140)
+    plt.title('Distribution of Data Sources')
+    plt.tight_layout()
+    plt.show()

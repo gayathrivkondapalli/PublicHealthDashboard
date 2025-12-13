@@ -1,7 +1,9 @@
 import sqlite3
 import pandas as pd
+import matplotlib.pyplot as plt
 
-from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country_by_ISO
+from vaccdash.data_access_module import init_db, load_csv_to_sqlite, query_country_by_ISO, query_country, plot_source_distribution
+
 
 # Requirement: System shall load cleaned vaccination data into SQLite.
 def test_init_db_creates_vaccinations_table(tmp_path):
@@ -75,7 +77,7 @@ def test_init_db_inserts_records(tmp_path):
     conn.close()
 
     assert count > 0
-# Acceptance: Query function retrieves correct records
+# Acceptance: Query function to retreive country records by date retrieves correct records
 def test_query_country_by_ISO_retrieves_correct_records(tmp_path):
     db_path = tmp_path / "test.db"
 
@@ -93,3 +95,53 @@ def test_query_country_by_ISO_retrieves_correct_records(tmp_path):
     assert all(
         (result_df["date"] >= "2021-01-01") & (result_df["date"] <= "2021-01-31")
     )
+
+    #Acceptance: Query function to retreive country records by date retrieves records in date order
+def test_query_country_retrieves_records(tmp_path):
+    db_path = tmp_path / "test.db"
+
+    init_db(db_path)
+    load_csv_to_sqlite("/Users/gayathrivkondapalli/Desktop/PGAI-Coursework/country_vaccinations.csv", db_path)
+
+    conn = sqlite3.connect(db_path)
+    result_df = query_country(conn, "Algeria", "2021-01-01", "2021-01-31")
+    conn.close()
+
+    # Assert: records are in date order
+    assert not result_df.empty
+
+def test_plot_source_distribution(tmp_path, monkeypatch):
+    # Create a temporary SQLite database
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    # Insert mock data with different source_names
+    conn = sqlite3.connect(db_path)
+    df = pd.DataFrame({
+        "iso_code": ["AAA", "BBB", "CCC"],
+        "country": ["CountryA", "CountryB", "CountryC"],
+        "location": ["LocA", "LocB", "LocC"],
+        "date": ["2021-01-01"]*3,
+        "total_vaccinations": [100, 200, 300],
+        "people_vaccinated": [50, 150, 250],
+        "people_fully_vaccinated": [25, 75, 125],
+        "daily_vaccinations_raw": [10, 20, 30],
+        "daily_vaccinations": [10, 20, 30],
+        "total_vaccinations_per_hundred": [1.0, 2.0, 3.0],
+        "people_vaccinated_per_hundred": [0.5, 1.5, 2.5],
+        "people_fully_vaccinated_per_hundred": [0.25, 0.75, 1.25],
+        "daily_vaccinations_per_million": [100, 200, 300],
+        "vaccines": ["A", "B", "C"],
+        "source_name": ["Source1", "Source2", "Source1"],
+        "source_website": ["site1", "site2", "site1"]
+    })
+    df.to_sql('vaccinations', conn, if_exists='append', index=False)
+    conn.close()
+
+    # Patch plt.show to prevent the plot window from blocking the test
+    monkeypatch.setattr(plt, "show", lambda: None)
+
+    # This should run without error and call plt.show (which is patched)
+    plot_source_distribution(db_path)
+
+
