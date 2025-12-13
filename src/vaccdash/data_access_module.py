@@ -102,3 +102,34 @@ def plot_daily_vaccinations(db_path, country, start_date, end_date):
     plt.grid()
     plt.tight_layout()
     plt.show()
+
+
+def plot_vaccine_split(db_path):
+    """
+    Creates a pie chart showing the split of vaccinations by vaccine type,
+    with all labels and percentages in the legend.
+    """
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql_query("SELECT * FROM vaccinations", conn)
+    conn.close()
+
+    vaccine_cols = [col for col in df.columns if col.startswith('vaccine_')]
+    if not vaccine_cols:
+        print("No split vaccine columns found.")
+        return
+
+    vaccine_counts = df[vaccine_cols].sum().sort_values(ascending=False)
+    total = vaccine_counts.sum()
+    labels = [
+        f"{col.replace('vaccine_', '').replace('_', ' ')} ({count/total:.1%})"
+        for col, count in zip(vaccine_counts.index, vaccine_counts)
+    ]
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    wedges, _ = ax.pie(
+        vaccine_counts, labels=None, startangle=140
+    )
+    ax.set_title('Split of Vaccinations by Vaccine Type')
+    ax.legend(wedges, labels, title="Vaccine Type", loc="center left", bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
+    plt.show()
