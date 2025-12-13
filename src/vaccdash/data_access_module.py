@@ -1,6 +1,43 @@
+
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
+import time
+import csv
+
+# Query log for timing and export
+query_log = []
+
+def log_query_time(func):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        # Try to extract the SQL query string if possible
+        query_str = ''
+        if 'query' in func.__code__.co_varnames:
+            # Try to get the query from local variables
+            try:
+                query_str = func.__code__.co_consts[1] if len(func.__code__.co_consts) > 1 else ''
+            except Exception:
+                query_str = func.__name__
+        else:
+            query_str = func.__name__
+        query_log.append({
+            "function": func.__name__,
+            "query": query_str,
+            "time_taken": end - start
+        })
+        return result
+    return wrapper
+
+def export_query_log_to_csv(filename="query_log.csv"):
+    with open(filename, "w", newline="") as csvfile:
+        fieldnames = ["function", "query", "time_taken"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in query_log:
+            writer.writerow(row)
 
 def init_db(db_path):
    
@@ -43,6 +80,8 @@ def load_csv_to_sqlite(csv_path, db_path):
      df.to_sql('vaccinations', conn, if_exists='append', index=False)
      conn.close()
 
+
+@log_query_time
 def query_country_by_ISO(conn, iso_code, start_date, end_date):
     query = """
     SELECT * FROM vaccinations 
@@ -50,7 +89,11 @@ def query_country_by_ISO(conn, iso_code, start_date, end_date):
     ORDER BY date
     """
     return pd.read_sql_query(query, conn, params=[iso_code, start_date, end_date])
+export_query_log_to_csv()
 
+
+
+@log_query_time
 def query_country(conn, country, start_date, end_date):
     query = """
     SELECT * FROM vaccinations 
@@ -58,7 +101,10 @@ def query_country(conn, country, start_date, end_date):
     ORDER BY date
     """
     return pd.read_sql_query(query, conn, params=[country, start_date, end_date])
+export_query_log_to_csv()
 
+
+@log_query_time
 def count_countries_using_vaccine(conn, vaccine_name):
     """
     Returns the number of distinct countries that use the specified vaccine.
@@ -70,6 +116,7 @@ def count_countries_using_vaccine(conn, vaccine_name):
     """
     result = pd.read_sql_query(query, conn, params=[vaccine_name])
     return result['country_count'].iloc[0]
+export_query_log_to_csv()
 
 def plot_source_distribution(db_path):
     """
@@ -85,6 +132,7 @@ def plot_source_distribution(db_path):
     plt.title('Distribution of Data Sources')
     plt.tight_layout()
     plt.show()
+export_query_log_to_csv()
 
 def plot_daily_vaccinations(db_path, country, start_date, end_date):
     """
@@ -133,3 +181,5 @@ def plot_vaccine_split(db_path):
     ax.legend(wedges, labels, title="Vaccine Type", loc="center left", bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
+
+    
