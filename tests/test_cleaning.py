@@ -160,3 +160,26 @@ def test_fully_vaccinated_ratio_division_by_zero():
     assert pd.isna(result.loc[result["date"] == pd.to_datetime("2021-01-01"), "fully_vaccinated_ratio"].values[0])
     # Check that the ratio for the second record is calculated correctly
     assert pytest.approx(result.loc[result["date"] == pd.to_datetime("2021-01-02"), "fully_vaccinated_ratio"].values[0], 0.01) == 0.35
+
+#Acceptance: The system should not use twitter as a source_website for vaccination data.
+def test_credible_sources():
+    df = pd.DataFrame(
+        {
+            "country": ["Aland", "Bland", "Cland"],
+            "iso_code": ["ALA", "BLA", "CLA"],
+            "date": ["2021-01-01", "2021-01-02", "2021-01-03"],
+            "source_website": [
+                "https://twitter.com/vaxdata",
+                "https://officialhealthsite.org/data",
+                "https://facebook.com/vaxnews"
+            ],
+            "total_vaccinations": [100.0, 200.0, 300.0],
+            "people_vaccinated": [50.0, 150.0, 250.0],
+            "people_fully_vaccinated": [20.0, 70.0, 120.0],
+        }
+    )
+    result = clean_vaccination_data(df)
+
+    # Check that no records have 'twitter' or 'facebook' in source_website
+    assert not result["source_website"].str.contains("twitter", case=False, na=False).any()
+    assert not result["source_website"].str.contains("facebook", case=False, na=False).any()

@@ -45,6 +45,10 @@ def clean_vaccination_data(df: pd.DataFrame) -> pd.DataFrame:
         else None,
         axis=1
     )
+    logger.info("Dropping records that have facebook or twitter as source_websites")
+    if "source_website" in cleaned.columns:
+        cleaned = cleaned[~cleaned["source_website"].str.contains("facebook|twitter", case=False, na=False)].reset_index(drop=True)
+    logger.info("Data cleaning complete")
 
     return cleaned
 
