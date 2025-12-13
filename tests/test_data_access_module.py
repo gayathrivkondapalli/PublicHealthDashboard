@@ -144,4 +144,39 @@ def test_plot_source_distribution(tmp_path, monkeypatch):
     # This should run without error and call plt.show (which is patched)
     plot_source_distribution(db_path)
 
+def test_count_countries_using_vaccine(tmp_path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    # Insert mock data
+    conn = sqlite3.connect(db_path)
+    df = pd.DataFrame({
+        "iso_code": ["AAA", "BBB", "CCC", "DDD"],
+        "country": ["CountryA", "CountryB", "CountryC", "CountryD"],
+        "location": ["LocA", "LocB", "LocC", "LocD"],
+        "date": ["2021-01-01"]*4,
+        "total_vaccinations": [100, 200, 300, 400],
+        "people_vaccinated": [50, 150, 250, 350],
+        "people_fully_vaccinated": [25, 75, 125, 175],
+        "daily_vaccinations_raw": [10, 20, 30, 40],
+        "daily_vaccinations": [10, 20, 30, 40],
+        "total_vaccinations_per_hundred": [1.0, 2.0, 3.0, 4.0],
+        "people_vaccinated_per_hundred": [0.5, 1.5, 2.5, 3.5],
+        "people_fully_vaccinated_per_hundred": [0.25, 0.75, 1.25, 1.75],
+        "daily_vaccinations_per_million": [100, 200, 300, 400],
+        "vaccines": ["VaccineA", "VaccineB", "VaccineA", "VaccineC"],
+        "source_name": ["Source1"]*4,
+        "source_website": ["site1"]*4
+    })
+    df.to_sql('vaccinations', conn, if_exists='append', index=False)
+
+    # Act
+    from vaccdash.data_access_module import count_countries_using_vaccine
+    country_count = count_countries_using_vaccine(conn, "VaccineA")
+
+    # Assert
+    assert country_count == 2  # CountryA and CountryC use VaccineA
+
+    conn.close()
+
 

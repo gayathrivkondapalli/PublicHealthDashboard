@@ -59,6 +59,18 @@ def query_country(conn, country, start_date, end_date):
     """
     return pd.read_sql_query(query, conn, params=[country, start_date, end_date])
 
+def count_countries_using_vaccine(conn, vaccine_name):
+    """
+    Returns the number of distinct countries that use the specified vaccine.
+    """
+    query = """
+    SELECT COUNT(DISTINCT country) as country_count
+    FROM vaccinations
+    WHERE vaccines LIKE '%' || ? || '%'
+    """
+    result = pd.read_sql_query(query, conn, params=[vaccine_name])
+    return result['country_count'].iloc[0]
+
 def plot_source_distribution(db_path):
     """
     Creates a pie chart showing the distribution of data sources in the vaccinations table.
